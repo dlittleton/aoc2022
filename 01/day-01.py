@@ -1,6 +1,7 @@
 import sys
 
-def calculateGroups(lines):
+
+def calculate_groups(lines):
     total = 0
     for line in lines:
         if not line:
@@ -11,7 +12,7 @@ def calculateGroups(lines):
     yield total
 
 
-sums = list(calculateGroups(map(str.rstrip, sys.stdin)))
+sums = list(calculate_groups(map(str.rstrip, sys.stdin)))
 sums.sort(reverse=True)
 print(sums[0])
 print(sum(s for s in sums[0:3]))
