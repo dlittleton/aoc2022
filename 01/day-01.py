@@ -8,7 +8,10 @@ def calculateGroups(lines):
             total = 0
         else:
             total += int(line)
+    yield total
 
 
-sums = calculateGroups(map(str.rstrip, sys.stdin))
-print(max(sums))
+sums = list(calculateGroups(map(str.rstrip, sys.stdin)))
+sums.sort(reverse=True)
+print(sums[0])
+print(sum(s for s in sums[0:3]))
