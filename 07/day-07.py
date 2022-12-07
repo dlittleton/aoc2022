@@ -52,9 +52,22 @@ for l in map(str.rstrip, sys.stdin):
         if new_dir:
             all_dirs[new_dir.path] = new_dir
 
+# Part 1
 total = 0
 for d in all_dirs.values():
     if d.size <= 100000:
         total += d.size
 
 print(total)
+
+# Part 2
+max_space = 70000000
+target_free = 30000000
+current_free = max_space - root.size
+
+choices = []
+for d in all_dirs.values():
+    if current_free + d.size >= target_free:
+        choices.append(d.size)
+
+print(min(choices))
