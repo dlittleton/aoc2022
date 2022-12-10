@@ -20,3 +20,15 @@ for i in range(20, len(signals_with_idx), 40):
     total += idx * sig
 
 print(total)
+
+chars = []
+for i, s in signals_with_idx[1:]:
+    pos = i - 1
+    pos %= 40
+    if s - 1 <= pos <= s + 1:
+        chars.append('#')
+    else:
+        chars.append('.')
+
+for i in range(0, len(chars), 40):
+    print(''.join(chars[i:i+40]))
