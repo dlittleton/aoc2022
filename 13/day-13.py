@@ -1,6 +1,7 @@
 import re
 import sys
 
+from functools import cmp_to_key
 from itertools import zip_longest
 
 delims = re.compile(r'([\[\],])')
@@ -50,11 +51,14 @@ def compare(left, right):
 
         
 
-
+all_packets = []
 results = []
 for l, r in pair(filter(lambda x: x, map(str.rstrip, sys.stdin))):
     left = parse_list(tokenize(l))
     right = parse_list(tokenize(r))
+
+    all_packets.append(left)
+    all_packets.append(right)
 
     results.append(compare(left, right) < 0)
 
@@ -64,3 +68,15 @@ for i, result in enumerate(results, 1):
         total += i
 
 print(total)
+
+div_2 = parse_list(tokenize('[[2]]'))
+div_6 = parse_list(tokenize('[[6]]'))
+
+all_packets.append(div_2)
+all_packets.append(div_6)
+
+all_packets.sort(key=cmp_to_key(compare))
+idx_2 = all_packets.index(div_2) + 1
+idx_6 = all_packets.index(div_6) + 1
+
+print(idx_2 * idx_6)
