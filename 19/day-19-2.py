@@ -20,11 +20,7 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
     '''
     seen = set()
     geodes = 0
-    pruned = dict(dup=0, max_production=0, projected_better=0)
-    
-    best_for_time = {}
-    for i in range(turns):
-        best_for_time[i] = (0,0,0,0)
+    pruned = dict(dup=0, max_production=0)
 
     # Maximum ore used for a robot
     max_ore = max(ore_ore, clay_ore, obs_ore, geode_ore)
@@ -55,18 +51,6 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
         ng = ag + bg
         nt = t + 1
         rt = turns - t
-
-        # Prune node if the best state seen at this time has a better projected value than the current node
-        zo, zc, zob, zg = best_for_time[t]
-        po = ao + (bo * rt)
-        pc = ac + (bc * rt)
-        pob = aob + (bob * rt)
-        pg = ag + (bg * rt)
-        if zo > po and zc > pc and zob > pob and zg > pg:
-            pruned['projected_better'] += 1
-            continue
-        elif pg > zg:
-            best_for_time[t] = (po, pc, pob, pg)
 
         # Do nothing this turn
         heads.append((no, nc, nob, ng, bo, bc, bob, bg, nt))
