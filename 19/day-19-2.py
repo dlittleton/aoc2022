@@ -20,7 +20,11 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
     '''
     seen = set()
     geodes = 0
-    pruned = dict(dup=0, max_production=0)
+    pruned = dict(dup=0, max_production=0, strictly_better=0)
+    
+    best_for_time = {}
+    for i in range(turns):
+        best_for_time[i] = (0,0,0,0,0,0,0,0)
 
     # Maximum ore used for a robot
     max_ore = max(ore_ore, clay_ore, obs_ore, geode_ore)
@@ -37,7 +41,23 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
             seen.add(state)
         
         ao, ac, aob, ag, bo, bc, bob, bg, t = state
-        
+
+        # Depth reached
+        if t >= turns:
+            if ag > geodes:
+                geodes = ag
+            continue
+
+        # Prune node if the best state seen at this time is strictly better than current node.
+        # To prune, all values (available and produced) must be greater
+        # To replace best, only consider geode values
+        yo, yc, yob, yg, zo, zc, zob, zg = best_for_time[t]
+        if yo > ao and yc > ac and yob > aob and yg > ag and zo > bo and zc > bc and zob > bob and zg > bg:
+            pruned['strictly_better'] += 1
+            continue
+        elif ag > yg and bg > zg:
+            best_for_time[t] = (ao, ac, aob, ag, bo, bc, bob, bg)
+
         # Increment for children nodes
         no = ao + bo
         nc = ac + bc
@@ -45,12 +65,6 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
         ng = ag + bg
         nt = t + 1
         rt = turns - t
-
-        # Depth reached
-        if t >= turns:
-            if ag > geodes:
-                geodes = ag
-            continue
 
         heads.append((no, nc, nob, ng, bo, bc, bob, bg, nt))
 
