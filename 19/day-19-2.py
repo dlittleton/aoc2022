@@ -44,6 +44,7 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
         nob = aob + bob
         ng = ag + bg
         nt = t + 1
+        rt = turns - t
 
         # Depth reached
         if t >= turns:
@@ -54,19 +55,25 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
         heads.append((no, nc, nob, ng, bo, bc, bob, bg, nt))
 
         if ao >= ore_ore:
-            if bo < max_ore:
+            max_use = max_ore * rt
+            avail = ao + (bo * rt)
+            if avail < max_use:
                 heads.append((no - ore_ore, nc, nob, ng, bo + 1, bc, bob, bg, nt))
             else:
                 pruned['max_production'] += 1
 
         if ao >= clay_ore:
-            if bc < obs_clay:
+            max_use = obs_clay* rt
+            avail = ac + (bc * rt)
+            if avail < max_use:
                 heads.append((no - clay_ore, nc, nob, ng, bo, bc + 1, bob, bg, nt))
             else:
                 pruned['max_production'] += 1
 
         if bob < geode_obs and ao >= obs_ore and ac >= obs_clay:
-            if bob < geode_obs:
+            max_use = geode_obs * rt
+            avail = aob + (bob * rt)
+            if avail < max_use:
                 heads.append((no - obs_ore, nc - obs_clay, nob, ng, bo, bc, bob + 1, bg, nt))
             else:
                 pruned['max_production'] += 1
