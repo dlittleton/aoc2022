@@ -20,7 +20,7 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
     '''
     seen = set()
     geodes = 0
-    pruned = 0
+    pruned = dict(dup=0, max_production=0)
 
     # Maximum ore used for a robot
     max_ore = max(ore_ore, clay_ore, obs_ore, geode_ore)
@@ -31,7 +31,7 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
         
         # Prune already visited states
         if state in seen:
-            pruned += 1
+            pruned['dup'] += 1
             continue
         else:
             seen.add(state)
@@ -53,19 +53,29 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
 
         heads.append((no, nc, nob, ng, bo, bc, bob, bg, nt))
 
-        if bo < max_ore and ao >= ore_ore:
-            heads.append((no - ore_ore, nc, nob, ng, bo + 1, bc, bob, bg, nt))
+        if ao >= ore_ore:
+            if bo < max_ore:
+                heads.append((no - ore_ore, nc, nob, ng, bo + 1, bc, bob, bg, nt))
+            else:
+                pruned['max_production'] += 1
 
-        if bc < obs_clay and ao >= clay_ore:
-            heads.append((no - clay_ore, nc, nob, ng, bo, bc + 1, bob, bg, nt))
+        if ao >= clay_ore:
+            if bc < obs_clay:
+                heads.append((no - clay_ore, nc, nob, ng, bo, bc + 1, bob, bg, nt))
+            else:
+                pruned['max_production'] += 1
 
         if bob < geode_obs and ao >= obs_ore and ac >= obs_clay:
-            heads.append((no - obs_ore, nc - obs_clay, nob, ng, bo, bc, bob + 1, bg, nt))
+            if bob < geode_obs:
+                heads.append((no - obs_ore, nc - obs_clay, nob, ng, bo, bc, bob + 1, bg, nt))
+            else:
+                pruned['max_production'] += 1
 
         if ao >= geode_ore and aob >= geode_obs:
             heads.append((no - geode_ore, nc, nob - geode_obs, ng, bo, bc, bob, bg + 1, nt))
 
-    print('Visited {0}, Pruned {1}'.format(len(seen), pruned))
+    print('Visited {0}'.format(len(seen)))
+    print('Pruned {0}'.format(pruned))
     return geodes
 
 
