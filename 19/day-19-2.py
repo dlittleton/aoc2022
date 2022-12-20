@@ -195,8 +195,8 @@ def simulate(turns, idx, ore_ore, clay_ore, obs_ore, obs_clay, geode_ore, geode_
 
 
 def do_work():
-    for line in map(str.rstrip, sys.stdin):
-        result = simulate(24, *map(int, numbers_re.findall(line)))
+    for line in map(str.rstrip, sys.stdin.readlines()[0:3]):
+        result = simulate(32, *map(int, numbers_re.findall(line)))
         
         print(result)
         sys.stdout.flush()
