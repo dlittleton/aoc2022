@@ -66,6 +66,94 @@ def get_enter_position(enter_side, idx):
     return positions[enter_side]
 
 
+def stitch_faces(faces):
+    ''' Arrange faces into a cube '''
+
+    # Faces indexed by grid position
+    fgrid = { (f.grid_row, f.grid_col) : f for f in faces }
+    print(fgrid)
+
+
+
+    # Step one, look for faces directly under or to the right of the current face.
+    for f in faces:
+        row = f.grid_row
+        col = f.grid_col
+
+        right = fgrid.get((row, col + 1), None)
+        if right:
+            f.link(Direction.Right, right, Direction.Left)
+
+        other = fgrid.get((row + 1, col), None)
+        if other:
+            f.link(Direction.Down, other, Direction.Up)
+
+    goal_links = 24 # All 6 faces linked on all 4 sides
+    link_count = sum(f.link_count for f in faces)
+    print('Start link count: ', link_count)    
+    while link_count < goal_links:
+
+        faces_with_downlinks = (f for f in faces if Direction.Down in f.links)
+        for f in faces_with_downlinks:
+            (other, denter, _) = f.links[Direction.Down]
+
+            clockwise = (denter + 1) % len(Direction)
+            if clockwise in other.links:
+                oclock, enter, _ = other.links[clockwise]
+                # Rotate counter clockwise
+                enter = (enter + 1) % len(Direction)
+                f.link(Direction.Right, oclock, enter)
+
+            # A node to the right of the face below this one is also to the right of this one.
+            cclockwise = (denter - 1) % len(Direction)
+            if cclockwise in other.links:
+                occlock, enter, _ = other.links[cclockwise]
+                # Rotate clockwise
+                enter = (enter - 1) % len(Direction)
+                f.link(Direction.Left, occlock, enter)
+
+        faces_with_rightlinks = (f for f in faces if Direction.Right in f.links)
+        for f in faces_with_rightlinks:
+            (other, denter, _) = f.links[Direction.Right]
+
+            clockwise = (denter + 1) % len(Direction)
+            if clockwise in other.links:
+                oclock, enter, _ = other.links[clockwise]
+                # Rotate counter clockwise
+                enter = (enter + 1) % len(Direction)
+                f.link(Direction.Up, oclock, enter)
+
+            # A node to the right of the face below this one is also to the right of this one.
+            cclockwise = (denter - 1) % len(Direction)
+            if cclockwise in other.links:
+                occlock, enter, _ = other.links[cclockwise]
+                # Rotate clockwise
+                enter = (enter - 1) % len(Direction)
+                f.link(Direction.Down, occlock, enter)
+
+        faces_with_leftlinks = (f for f in faces if Direction.Left in f.links)
+        for f in faces_with_leftlinks:
+            (other, lenter, _) = f.links[Direction.Left]
+
+            clockwise = (lenter + 1) % len(Direction)
+            if clockwise in other.links:
+                oclock, enter, _ = other.links[clockwise]
+                # Rotate counter clockwise
+                enter = (enter + 1) % len(Direction)
+                f.link(Direction.Down, oclock, enter)
+
+            # A node to the right of the face below this one is also to the right of this one.
+            cclockwise = (lenter - 1) % len(Direction)
+            if cclockwise in other.links:
+                occlock, enter, _ = other.links[cclockwise]
+                # Rotate clockwise
+                enter = (enter - 1) % len(Direction)
+                f.link(Direction.Up, occlock, enter)
+
+        link_count = sum(f.link_count for f in faces)
+        print('Current link count: ', link_count)
+
+        
 class Face:
     ''' Individual face with local coordinates '''
 
@@ -78,26 +166,33 @@ class Face:
         self.links = {}
 
     def link(self, exit_side, other_face, enter_side):
+        dir_name = Direction(exit_side).name
+        if exit_side in self.links:
+            return
+
+        print('Node {0} is {1} of node {2}'.format(other_face.name, dir_name, self.name))
         invert = should_invert(exit_side, enter_side)
-        self.links[exit_side] = (other_face, enter_side, invert) 
+        self.links[exit_side] = (other_face, enter_side, invert)
 
-    def check_links(self):
-        for link in self.links:
-            cube, enter_side, invert = self.links[link]
-
-            oface, oenter, oinvert = cube.links[enter_side]
-
-            matches = oface.name == self.name and oenter == link and oinvert == invert
-            if not matches:
-                print("Checking face {0} link {1}".format(self.name, link))
-                print(self.name, oface.name)
-                print(link, oenter)
-                print(invert, oinvert)
-                print("")
+        if enter_side not in other_face.links:
+            print('Node {0} is {1} of node {2}'.format(self.name, Direction(enter_side).name, other_face.name)) 
+            other_face.links[enter_side] = (self, exit_side, invert)
 
     def __getitem__(self, index):
         x, y = index
         return self.grid[self.row + x, self.col + y]
+
+    @property
+    def grid_row(self):
+        return self.row // self.size
+
+    @property
+    def grid_col(self):
+        return self.col // self.size
+
+    @property
+    def link_count(self):
+        return len(self.links)
 
 
 class Cursor(namedtuple('Cursor', ['face', 'x', 'y', 'direction'])):
@@ -151,73 +246,10 @@ moves = re.split(r'(L|R)', next(input))
 
 faces = {}
 for idx, row, col in find_faces(grid, face_size):
-    faces[idx] = Face(idx, grid, row, col, face_size)
+    f = Face(idx, grid, row, col, face_size)
+    faces[f.name] = f
 
-if face_size == 4:
-    # Setup Links For Sample
-    faces[1].link(Direction.Right, faces[6], Direction.Right)
-    faces[1].link(Direction.Down, faces[4], Direction.Up)
-    faces[1].link(Direction.Left, faces[3], Direction.Up)
-    faces[1].link(Direction.Up, faces[2], Direction.Up)
-
-    faces[2].link(Direction.Right, faces[3], Direction.Left)
-    faces[2].link(Direction.Down, faces[5], Direction.Down)
-    faces[2].link(Direction.Left, faces[6], Direction.Down)
-    faces[2].link(Direction.Up, faces[1], Direction.Up)
-
-    faces[3].link(Direction.Right, faces[4], Direction.Left)
-    faces[3].link(Direction.Down, faces[5], Direction.Left)
-    faces[3].link(Direction.Left, faces[2], Direction.Right)
-    faces[3].link(Direction.Up, faces[1], Direction.Left)
-
-    faces[4].link(Direction.Right, faces[6], Direction.Up)
-    faces[4].link(Direction.Down, faces[5], Direction.Up)
-    faces[4].link(Direction.Left, faces[3], Direction.Right)
-    faces[4].link(Direction.Up, faces[1], Direction.Down)
-
-    faces[5].link(Direction.Right, faces[6], Direction.Left)
-    faces[5].link(Direction.Down, faces[2], Direction.Down)
-    faces[5].link(Direction.Left, faces[3], Direction.Down)
-    faces[5].link(Direction.Up, faces[4], Direction.Down)
-
-    faces[6].link(Direction.Right, faces[1], Direction.Right)
-    faces[6].link(Direction.Down, faces[2], Direction.Left)
-    faces[6].link(Direction.Left, faces[5], Direction.Right)
-    faces[6].link(Direction.Up, faces[4], Direction.Right)
-else:
-    # Setup links for input
-    faces[1].link(Direction.Right, faces[2], Direction.Left)
-    faces[1].link(Direction.Down, faces[3], Direction.Up)
-    faces[1].link(Direction.Left, faces[4], Direction.Left)
-    faces[1].link(Direction.Up, faces[6], Direction.Left)
-
-    faces[2].link(Direction.Right, faces[5], Direction.Right)
-    faces[2].link(Direction.Down, faces[3], Direction.Right)
-    faces[2].link(Direction.Left, faces[1], Direction.Right)
-    faces[2].link(Direction.Up, faces[6], Direction.Down)
-
-    faces[3].link(Direction.Right, faces[2], Direction.Down)
-    faces[3].link(Direction.Down, faces[5], Direction.Up)
-    faces[3].link(Direction.Left, faces[4], Direction.Up)
-    faces[3].link(Direction.Up, faces[1], Direction.Down)
-
-    faces[4].link(Direction.Right, faces[5], Direction.Left)
-    faces[4].link(Direction.Down, faces[6], Direction.Up)
-    faces[4].link(Direction.Left, faces[1], Direction.Left)
-    faces[4].link(Direction.Up, faces[3], Direction.Left)
-
-    faces[5].link(Direction.Right, faces[2], Direction.Right)
-    faces[5].link(Direction.Down, faces[6], Direction.Right)
-    faces[5].link(Direction.Left, faces[4], Direction.Right)
-    faces[5].link(Direction.Up, faces[3], Direction.Down)
-
-    faces[6].link(Direction.Right, faces[5], Direction.Down)
-    faces[6].link(Direction.Down, faces[2], Direction.Up)
-    faces[6].link(Direction.Left, faces[1], Direction.Up)
-    faces[6].link(Direction.Up, faces[4], Direction.Down)
-
-for f in faces.values():
-    f.check_links()
+stitch_faces(faces.values())
 
 cursor = Cursor(faces[1], 0, 0, Direction.Right)
 move_iterator = iter(moves)
