@@ -72,31 +72,35 @@ blizzards = Blizzards(rows, cols)
 for pos, char in init.items():
     blizzards.add(pos, char)
 
-paths = []
-heappush(paths, (0, start, 0))
 
-closest = target[0] - start[0] + target[1] - start[1]
-seen = set()
+def search(starting_position, starting_turn, goal):
+    seen = set()
 
-while paths:
-    _, pos, time = heappop(paths)
-    nt = time + 1
+    paths = []
+    heappush(paths, (0, starting_position, starting_turn))  
 
-    if (pos, time) in seen:
-        continue
+    while paths:
+        _, pos, time = heappop(paths)
+        nt = time + 1
 
-    seen.add((pos, time))
-    
-    if pos == target:
-        print('Reached exit at time: ', time)
-        break
+        if (pos, time) in seen:
+            continue
 
-    for cr, cc in children(pos):
-        if (1 <= cr <= rows) and (1 <= cc <= cols) or (cr, cc) in (start, target):
-            if blizzards.is_clear(nt, (cr, cc)):
-                score = target[0] - cr + target[1] - cc
-                if score < closest:
-                    print('New closest: ', score)
-                    closest = score
-                paths.append((score + nt, (cr, cc), nt))
+        seen.add((pos, time))
+        
+        if pos == goal:
+            print('Reached exit at time: ', time)
+            return time
+
+        for cr, cc in children(pos):
+            if (1 <= cr <= rows) and (1 <= cc <= cols) or (cr, cc) in (start, target):
+                if blizzards.is_clear(nt, (cr, cc)):
+                    score = goal[0] - cr + goal[1] - cc
+                    paths.append((score + nt, (cr, cc), nt))
+
+r1 = search(start, 0, target)
+r2 = search(target, r1, start)
+r3 = search(start, r2, target)
+
+print(r1, r2, r3)
 
